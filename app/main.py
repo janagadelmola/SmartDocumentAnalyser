@@ -8,7 +8,9 @@
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 
+from app.classification import classify_document
 from app.extraction import extract_text
+from app.generation import generate_flashcards, generate_summary
 
 app = FastAPI(title="Smart Document Analyser")
 
@@ -16,6 +18,17 @@ app = FastAPI(title="Smart Document Analyser")
 # keeping it as a constant so its easy to change later
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+# matches the DOCUMENT_TYPES -> OUTPUT_TYPES mapping table in
+# docs/design.md. lecture notes -> flashcards, everything else -> summary 
+# for now
+TYPE_TO_GENERATOR = {
+    "lecture_notes": generate_flashcards,
+    "financial_report": generate_summary,
+    "meeting_notes": generate_summary,
+    "research_article": generate_summary,
+    "other": generate_summary,
+}
 
 @app.get("/health")
 def health_check():
@@ -44,10 +57,18 @@ async def upload_document(file: UploadFile = File(...)):
         # reference: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
         raise HTTPException(status_code=400, detail=str(error))
 
-    # only returning a preview right now, nothing gets saved yet
+    # step 1: figure out what kind of document this is
+    classification = classify_document(text)
+    doc_type = classification["type"]
+
+    # step 2: run the right generator for that type
+    generator = TYPE_TO_GENERATOR[doc_type]
+    output = generator(text)
 
     return {
         "filename": file.filename,
         "characters": len(text),
-        "preview": text[:200],
+        "document_type": doc_type,
+        "confidence": classification["confidence"],
+        "output": output,
     }
