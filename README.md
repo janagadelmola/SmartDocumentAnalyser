@@ -1,15 +1,15 @@
 # Smart Document Analyser
 
-Upload a document, and it's automatically classified by type (lecture notes, financial report, meeting notes, or research article) and turned into the output that type needs — flashcards for lecture notes, a summary with key takeaways for reports and meeting notes.
+Upload a document, and it's automatically classified by type (lecture notes, financial report, meeting notes, or research article) and turned into the output that type needs: flashcards for lecture notes, a summary with key takeaways for reports and meeting notes.
 
 Built as a portfolio project to practise working with a real, structured LLM pipeline rather than a single prompt-and-response chatbot.
 
 ## How it works
 
-1. **Upload** — a `.txt`, `.pdf`, or `.docx` file is sent to the API.
-2. **Extract** — the file's raw bytes are converted to plain text, using a different method per format (PDF and DOCX need dedicated parsers, since neither is plain text under the hood).
-3. **Classify** — the extracted text is sent to Gemini, which returns a document type and a confidence score, constrained to a fixed set of categories via a JSON Schema.
-4. **Generate** — based on the classified type, a second Gemini call produces the matching output (flashcards or a summary), again constrained to a specific JSON shape.
+1. **Upload:** a `.txt`, `.pdf`, or `.docx` file is sent to the API.
+2. **Extract:** the file's raw bytes are converted to plain text, using a different method per format (PDF and DOCX need dedicated parsers, since neither is plain text under the hood).
+3. **Classify:** the extracted text is sent to Gemini, which returns a document type and a confidence score, constrained to a fixed set of categories via a JSON Schema.
+4. **Generate:** based on the classified type, a second Gemini call produces the matching output (flashcards or a summary), again constrained to a specific JSON shape.
 
 ```mermaid
 flowchart LR
@@ -60,18 +60,18 @@ Open `http://127.0.0.1:8000/docs` for the interactive API docs, where you can up
 
 ## API
 
-**`POST /documents`** — upload a file (`.txt`, `.pdf`, or `.docx`, max 5 MB)
+**`POST /documents`**: upload a file (`.txt`, `.pdf`, or `.docx`, max 5 MB)
 
 Returns a JSON object containing the filename, character count, detected `document_type`, a `confidence` score, and an `output` object holding either a `flashcards` list (question/answer pairs) or a `summary` with `key_points`, depending on the document type.
 
-**`GET /health`** — basic status check
+**`GET /health`**: basic status check
 
 ## Design decisions worth noting
 
 - **Two separate model calls, not one.** Classification and generation are split, with classification acting as a routing step that decides which generator runs. This keeps each prompt focused and makes it easy to swap in a different generator per type later (e.g. Q&A for research articles).
-- **Structured output via JSON Schema**, rather than just asking the model to "reply in JSON" — the response shape is enforced by the API itself.
+- **Structured output via JSON Schema**, rather than just asking the model to "reply in JSON": the response shape is enforced by the API itself.
 - **Classification has a fallback**: if Gemini ever returns a type outside the expected five, the code defaults to `other` rather than trusting it blindly.
-- **Generation isn't length-capped** — flashcard count and summary length scale with the document's actual content, rather than a fixed range that pads short documents or cuts off long ones.
+- **Generation isn't length-capped:** flashcard count and summary length scale with the document's actual content, rather than a fixed range that pads short documents or cuts off long ones.
 - Built against a live, changing API: the Gemini SDK moved from `generate_content` to the newer Interactions API partway through development, which meant debugging real breaking changes from the actual error responses rather than from stable documentation.
 
 ## Status
