@@ -1,4 +1,4 @@
-# Smart Document Analyzer
+# Smart Document Analyser
 
 Upload a document, and it's automatically classified by type (lecture notes, financial report, meeting notes, or research article) and turned into the output that type needs — flashcards for lecture notes, a summary with key takeaways for reports and meeting notes.
 
